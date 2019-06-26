@@ -11,6 +11,7 @@ For use with the Adafruit Motor Shield v2
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
 #include <ESP8266WiFi.h>
+#include <WiFiManager.h>
 #include "WiFiUdp.h"
 #include <NTPClient.h>
 
@@ -24,14 +25,17 @@ Adafruit_StepperMotor *myMotor = AFMS.getStepper(513, 2);
 //An NTP client, requires Wifi had been connected previously
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
+bool wificonnected = false;
 
 //Calculation of time delay
 //Gap is in minutes
-#define GAP (15)
+#define GAP (10)
 unsigned long minutes, seconds, t = 0;
 
 void setup()
 {
+  WiFiManager wifiManager;
+
   //Start serial connection
   Serial.begin(9600);
   Serial.println("Starting program");
@@ -42,18 +46,20 @@ void setup()
 
   Serial.println("Motor config'd");
 
-  //Wait for wifi to connect
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("Connected");
+  //timeout on wifi-config
+  wifiManager.setTimeout(300);
 
-  //Connect to the NTP server
-  timeClient.begin();
-  timeClient.update();
-  Serial.println(timeClient.getFormattedTime());
+  //Wait for wifi to connect
+  if (wifiManager.autoConnect("AutoConnectAP"))
+  {
+    Serial.println("Connected");
+    //Connect to the NTP server
+    timeClient.begin();
+    timeClient.update();
+    Serial.println(timeClient.getFormattedTime());
+
+    wificonnected = true;
+  }
 }
 
 void loop()
@@ -67,8 +73,14 @@ void loop()
   Serial.println("Finished rotations");
 
   //Delay until the next GAP minutes mark
-  minutes = GAP - timeClient.getMinutes() % GAP - 1;
-  seconds = 60 - timeClient.getSeconds();
+  if(wificonnected) {
+    minutes = GAP - timeClient.getMinutes() % GAP - 1;
+    seconds = 60 - timeClient.getSeconds();
+  }
+  else {
+    minutes = GAP;
+    seconds = 0;
+  }
   t = (minutes * 60) + seconds;
   t = (t == 0) ? GAP * 60 : t;
 
