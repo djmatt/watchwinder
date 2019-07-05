@@ -30,7 +30,14 @@ bool wificonnected = false;
 //Calculation of time delay
 //Gap is in minutes
 #define GAP (10)
+#define STEPSPERREV (32)
+#define GEARING (16.032)
+#define GEAREDREV (STEPSPERREV * GEARING)
+#define TWENTYREVS (20 * GEAREDREV)
+
 unsigned long minutes, seconds, t = 0;
+float steps = 0;
+int move = 0;
 
 void setup()
 {
@@ -65,19 +72,21 @@ void setup()
 void loop()
 {
   //run the winder operation for 1 minutes (roughly)
-  for (int i = 0; i < 25; i++)
-  {
-    myMotor->step(513, FORWARD, DOUBLE);
-  }
+  steps = steps + GEAREDREV;
+  move = (int)steps;
+  steps = steps - move;
+  myMotor->step(move, FORWARD, DOUBLE);
   myMotor->release();
   Serial.println("Finished rotations");
 
   //Delay until the next GAP minutes mark
-  if(wificonnected) {
+  if (wificonnected)
+  {
     minutes = GAP - timeClient.getMinutes() % GAP - 1;
     seconds = 60 - timeClient.getSeconds();
   }
-  else {
+  else
+  {
     minutes = GAP;
     seconds = 0;
   }
