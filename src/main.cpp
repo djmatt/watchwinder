@@ -44,7 +44,7 @@ void setup()
   WiFiManager wifiManager;
 
   //Start serial connection
-  Serial.begin(9600);
+  Serial.begin();
   Serial.println("Starting program");
 
   //Setup stepper controls
@@ -72,7 +72,7 @@ void setup()
 void loop()
 {
   //run the winder operation for 1 minutes (roughly)
-  steps = steps + GEAREDREV;
+  steps = steps + TWENTYREVS;
   move = (int)steps;
   steps = steps - move;
   myMotor->step(move, FORWARD, DOUBLE);
